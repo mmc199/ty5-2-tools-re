@@ -76,7 +76,7 @@ namespace ty5_2_tools_re
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(53, 12);
             this.label2.TabIndex = 2;
-            this.label2.Text = "替换位置";
+            this.label2.Text = "筛选位置";
             // 
             // label3
             // 
@@ -187,7 +187,7 @@ namespace ty5_2_tools_re
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(53, 12);
             this.label5.TabIndex = 12;
-            this.label5.Text = "替换类型";
+            this.label5.Text = "筛选类型";
             // 
             // comboBox1
             // 
