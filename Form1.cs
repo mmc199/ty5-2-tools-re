@@ -12,7 +12,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Windows.Forms;
 using ICSharpCode.SharpZipLib.Zip;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+//using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+
+using System.Collections.Specialized;
 
 namespace ty5_2_tools_re
 {
@@ -27,6 +29,11 @@ namespace ty5_2_tools_re
             this.AllowDrop = true;
             this.textBox1_Link.AllowDrop = true;
             this.textBox2_Target.AllowDrop = true;
+
+
+            // 为两个文本框添加KeyDown事件处理
+            this.textBox1_Link.KeyDown += new KeyEventHandler(TextBox_KeyDown);
+            this.textBox2_Target.KeyDown += new KeyEventHandler(TextBox_KeyDown);
 
             // 为textBox_Link和textBox_Target添加事件处理程序
             this.textBox1_Link.DragEnter += new DragEventHandler(textBox_DragEnter);
@@ -53,6 +60,46 @@ namespace ty5_2_tools_re
 
         }
 
+
+
+        private void TextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            // 检测 Ctrl+V 组合键
+            if (e.Control && e.KeyCode == Keys.V)
+            {
+                TextBox textBox = sender as TextBox; // 获取触发事件的TextBox
+                if (textBox != null)
+                {
+                    // 检查剪贴板中是否有文件路径
+                    if (Clipboard.ContainsFileDropList())
+                    {
+                        // 获取剪贴板中的文件路径
+                        StringCollection files = Clipboard.GetFileDropList();
+                        if (files.Count > 0)
+                        {
+                            string firstPath = files[0]; // 获取第一个路径
+
+                            // 判断是文件还是目录
+                            if (File.Exists(firstPath))
+                            {
+                                // 如果是文件，获取其所在目录
+                                string directory = Path.GetDirectoryName(firstPath);
+                                textBox.Text = directory;
+                            }
+                            else if (Directory.Exists(firstPath))
+                            {
+                                // 如果是目录，直接使用该路径
+                                textBox.Text = firstPath;
+                            }
+
+                            e.Handled = true; // 阻止默认的粘贴行为
+                        }
+                    }
+                }
+            }
+        }
+
+
         // 定义 textBox2 的 TextChanged 事件处理程序
         private void TextBox2_Target_TextChanged(object sender, EventArgs e)
         {
@@ -68,6 +115,7 @@ namespace ty5_2_tools_re
             var extensionMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { ".jgw", ".jpg" },
+            { ".j2w", ".jp2" },
             { ".pgw", ".png" },
             { ".tfw", ".tif" }
         };
@@ -200,6 +248,7 @@ namespace ty5_2_tools_re
 
             // 动态添加选项
             comboBox1.Items.Add(".jgw");
+            comboBox1.Items.Add(".j2w");
             comboBox1.Items.Add(".pgw");
             comboBox1.Items.Add(".tfw");
 
@@ -360,6 +409,7 @@ namespace ty5_2_tools_re
                 var extensionMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
         {
             { ".jgw", new List<string> { ".jpg" } },
+            { ".j2w", new List<string> { ".jp2" } },
             { ".pgw", new List<string> { ".png" } },
             { ".tfw", new List<string> { ".tif", ".tiff" } } // 支持 .tif 和 .tiff
         };
@@ -372,13 +422,14 @@ namespace ty5_2_tools_re
                 foreach (var file in files)
                 {
                     string fileName = Path.GetFileName(file);
+                    string sourcefileName = Path.Combine(Path.GetDirectoryName(sourceFilePath) , fileName);
                     string targetFilePath = Path.Combine(targetSubDirectory, fileName);
 
                     // 复制扩展名文件到目标子目录
                     try
                     {
-                        File.Copy(file, targetFilePath, true);
-                        Console.WriteLine($"已复制 {file} 到 {targetFilePath}");
+                        File.Copy(sourcefileName, targetFilePath, true);
+                        Console.WriteLine($"已复制 {sourcefileName} 到 {targetFilePath}");
                     }
                     catch (Exception ex)
                     {
@@ -387,7 +438,7 @@ namespace ty5_2_tools_re
 
 
                     // 处理对应的 .prj 文件
-                    string correspondingPrjFilePath = Path.ChangeExtension(file, ".prj");
+                    string correspondingPrjFilePath = Path.ChangeExtension(sourcefileName, ".prj");
                     if (File.Exists(correspondingPrjFilePath))
                     {
                         string targetPrjPath = Path.Combine(targetSubDirectory, Path.GetFileName(correspondingPrjFilePath));
@@ -417,7 +468,7 @@ namespace ty5_2_tools_re
                         foreach (var companionExtension in companionExtensions)
                         {
                             // 构建对应的映射扩展名文件路径
-                            string correspondingFilePath = Path.ChangeExtension(file, companionExtension);
+                            string correspondingFilePath = Path.ChangeExtension(sourcefileName, companionExtension);
                             string targetLinkPath = Path.Combine(targetSubDirectory, Path.GetFileName(correspondingFilePath));
 
 
